@@ -1,0 +1,52 @@
+pipeline {
+    /*any free jenkins agent to execute the pipeline*/
+    agent any
+
+    tools {
+        maven "localMaven"
+    }
+    stages {
+        stage('Hello') {
+            steps {
+                echo 'Hello World'
+            }
+        }
+        stage('Clone CodeBase') {
+            steps {
+                echo 'Clone Github Repo'
+                git 'https://github.com/RiadhBg26/maven-project.git'
+            }
+        }
+        stage('Compile'){
+            steps {
+                withMaven(maven:'localMaven') {
+                    //for linux: sh "mvn compile"
+                    //for windoiws: bat "mvn compile"
+                    bat "mvn compile"
+                }
+            }
+        }
+        stage('Test'){
+            steps {
+                withMaven(maven:'localMaven') {
+                    bat "mvn test"
+                }
+            }
+        }
+        //essentiel de séparer le build
+        stage('Build'){
+            steps {
+                withMaven(maven:'localMaven') {
+                    bat "mvn -B -DskipTests clean package"
+                }
+            }
+        }
+        stage('Build and send results to Sonar'){
+            steps {
+                withSonarQubeEnv(installationName:'localSonar', credentialsId:'tokenSonar') {
+                    bat "mvn -B -DskipTests clean package sonar:sonar"
+                }
+            }
+        }
+    }
+}
